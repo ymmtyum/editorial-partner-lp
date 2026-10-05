@@ -439,9 +439,10 @@ html:not(.js) .tile-toggle { display: none !important; }
 .inquiry-close { margin-top: 8px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: .25em; }
 .inquiry-trap { position: absolute; left: -9999px; top: 0; height: 0; overflow: hidden; }
 
-/* PC: cards follow one another down the page. The card grows with its text. */
-html.is-flow,
-html.is-flow body { height: auto; overflow: auto; }
+/* PC: cards follow one another down the page. The card grows with its text.
+   Only the document scrolls. A second scroll box on body swallows the trackpad. */
+html.js.is-flow { height: auto !important; overflow-x: hidden; overflow-y: auto !important; overscroll-behavior: auto; }
+html.js.is-flow body { height: auto !important; overflow: visible !important; overscroll-behavior: auto; }
 html.is-flow main { position: relative; inset: auto; height: auto; min-height: 100dvh; overflow: visible; }
 html.is-flow .hero {
   position: relative;
@@ -450,6 +451,7 @@ html.is-flow .hero {
   min-height: 100dvh;
   visibility: visible;
   overflow: hidden;
+  overscroll-behavior: auto;
   z-index: auto;
   scroll-margin-top: 0;
 }
@@ -476,6 +478,7 @@ html.is-flow .chapter {
   height: auto;
   padding: 0;
   overflow: visible;
+  overscroll-behavior: auto;
   visibility: visible;
   pointer-events: auto;
   z-index: auto !important;
