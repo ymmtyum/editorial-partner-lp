@@ -409,19 +409,19 @@ function shouldCommit(delta, velocity, span) {
   return Math.sign(velocity) === Math.sign(delta) && Math.abs(velocity) > 0.55;
 }
 
-function releasePose(velocity = poseVelocity()) {
+function releasePose(velocity = poseVelocity(), force = false) {
   tracking = false;
   deck.classList.remove('is-dragging');
   const travel = cardTravel();
   const intent = dragIntent;
   pose.x = 0;
   const forwardPull = Math.min(pose.y, 0);
-  if (intent === 'forward' && activeIndex + 1 < chapters.length && shouldCommit(forwardPull, velocity.y, travel)) {
+  if (intent === 'forward' && activeIndex + 1 < chapters.length && (force || shouldCommit(forwardPull, velocity.y, travel))) {
     springPose(0, -travel, { x: 0, y: velocity.y }, () => { dragIntent = 'idle'; commitNextCard(); });
     return;
   }
   const backPull = Math.max(pose.y, 0);
-  if (intent === 'back' && activeIndex >= 0 && shouldCommit(backPull, velocity.y, travel)) {
+  if (intent === 'back' && activeIndex >= 0 && (force || shouldCommit(backPull, velocity.y, travel))) {
     springPose(0, travel, velocity, () => {
       dragIntent = 'idle';
       if (activeIndex > 0) commitPreviousCard();
@@ -1160,21 +1160,126 @@ indexLinks.forEach((link) => {
     } else enterStack(index);
   });
 });
-document.querySelector('.index-contact')?.addEventListener('click', (event) => {
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-  event.preventDefault();
-  const opened = window.open('./contact.html', 'editorial-partner-contact', 'popup,width=520,height=760');
-  if (opened) opened.opener = null;
-  menu.close();
+document.querySelectorAll('.inquiry-open').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+    event.preventDefault();
+    window.open('./contact.html', '_blank');
+    if (link.closest('dialog')) menu.close();
+  });
 });
+
+let flowFrame = 0;
+let flowTarget = 0;
+let flowShown = 0;
+let flowCommit = '';
+let flowStamp = 0;
+
+function stopFlow() {
+  if (flowFrame) cancelAnimationFrame(flowFrame);
+  flowFrame = 0;
+  flowStamp = 0;
+  flowTarget = 0;
+  flowShown = 0;
+  flowCommit = '';
+}
+
+function kickFlow() {
+  if (!flowFrame) flowFrame = requestAnimationFrame(stepFlow);
+}
+
+function stepFlow(now) {
+  const travel = cardTravel();
+  flowTarget = Math.max(-travel, Math.min(travel, flowTarget));
+  const dt = flowStamp ? Math.min(34, now - flowStamp) : 16;
+  flowStamp = now;
+  const diff = flowTarget - flowShown;
+  if (Math.abs(diff) <= 0.8) {
+    flowShown = flowTarget;
+    pose.x = 0;
+    pose.y = flowShown;
+    applyPose();
+    flowFrame = 0;
+    flowStamp = 0;
+    const commit = flowCommit;
+    flowCommit = '';
+    if (commit === 'next') {
+      flowTarget = 0;
+      flowShown = 0;
+      tracking = false;
+      dragIntent = 'idle';
+      commitNextCard();
+      return;
+    }
+    if (commit === 'prev') {
+      flowTarget = 0;
+      flowShown = 0;
+      tracking = false;
+      dragIntent = 'idle';
+      if (activeIndex > 0) commitPreviousCard();
+      else if (location.hash !== '#top') location.hash = '#top';
+      return;
+    }
+    tracking = Math.abs(flowShown) > 1;
+    deck.classList.toggle('is-dragging', tracking);
+    if (!tracking) {
+      dragIntent = 'idle';
+      if (shownNext >= 0) {
+        clearCardDrag(shownNext);
+        hideChapter(shownNext);
+        shownNext = -1;
+      }
+      if (activeIndex >= 0) clearCardDrag(activeIndex);
+    }
+    return;
+  }
+  flowShown += Math.sign(diff) * Math.min(Math.abs(diff), 0.72 * dt);
+  pose.x = 0;
+  pose.y = flowShown;
+  tracking = true;
+  applyPose();
+  flowFrame = requestAnimationFrame(stepFlow);
+}
+
+function settleWheelFlow(gesture) {
+  const travel = cardTravel();
+  const firm = gesture.events >= 6;
+  if (firm && flowTarget <= -110 && activeIndex + 1 < chapters.length) {
+    flowTarget = -travel;
+    flowCommit = 'next';
+  } else if (firm && flowTarget >= 110 && activeIndex >= 0) {
+    flowTarget = travel;
+    flowCommit = 'prev';
+  } else {
+    flowTarget = 0;
+    flowCommit = '';
+  }
+  kickFlow();
+}
 
 function finishWheel(commit = true) {
   clearTimeout(wheelIdleTimer);
   const gesture = wheelGesture;
   wheelGesture = null;
-  if (!gesture || gesture.mode === 'read' || !commit) return;
-  if (!gesture.moved) return;
-  releasePose();
+  if (!gesture || gesture.mode === 'read' || !gesture.moved || !commit) {
+    if (!commit && finePointer() && (flowFrame || flowShown || flowTarget)) {
+      stopFlow();
+      pose.y = 0;
+      tracking = false;
+      dragIntent = 'idle';
+      applyPose();
+    }
+    return;
+  }
+  if (finePointer()) {
+    settleWheelFlow(gesture);
+    return;
+  }
+  const velocity = poseVelocity();
+  const direction = Math.sign(pose.y);
+  const opposed = direction && Math.sign(velocity.y) === -direction && Math.abs(velocity.y) > 0.35;
+  const firm = !opposed && gesture.events >= 6 && Math.abs(pose.y) >= 110;
+  releasePose(velocity, firm);
 }
 
 function resetWheel(commit = true) {
@@ -1185,7 +1290,7 @@ function armWheelDrag(gesture) {
   if (gesture.armed) return;
   gesture.armed = true;
   gesture.mode = 'drag';
-  captureLivePose();
+  if (!finePointer()) captureLivePose();
 }
 
 window.addEventListener('wheel', (event) => {
@@ -1201,20 +1306,27 @@ window.addEventListener('wheel', (event) => {
   const direction = Math.sign(dy);
   if (!wheelGesture) {
     const reading = view === 'card' && canReadFurther(direction);
-    if (!reading) captureLivePose();
+    if (!reading && !finePointer()) captureLivePose();
+    if (!reading && finePointer() && springFrame) {
+      stopSpring();
+      flowShown = pose.y;
+      flowTarget = pose.y;
+    }
     wheelGesture = {
       lastAt: performance.now(),
       mode: reading ? 'read' : 'drag',
       moved: false,
       overscroll: 0,
       armed: !reading,
+      events: 0,
     };
     tracking = !reading;
   }
   const gesture = wheelGesture;
   gesture.lastAt = performance.now();
+  gesture.events += 1;
   clearTimeout(wheelIdleTimer);
-  wheelIdleTimer = setTimeout(() => finishWheel(true), 180);
+  wheelIdleTimer = setTimeout(() => finishWheel(true), 280);
   if (gesture.mode === 'read') {
     const consumed = scrollCurrentCard(dy);
     const leftover = dy - consumed;
@@ -1226,6 +1338,13 @@ window.addEventListener('wheel', (event) => {
     gesture.overscroll = 0;
     armWheelDrag(gesture);
     if (!extra) return;
+    if (finePointer()) {
+      const travel = cardTravel();
+      flowTarget = Math.max(-travel, Math.min(travel, flowTarget - extra));
+      gesture.moved = true;
+      kickFlow();
+      return;
+    }
     const limits = dragLimits();
     pose.x = 0;
     pose.y = rubber(pose.y - extra, limits.minY, limits.maxY);
@@ -1233,6 +1352,13 @@ window.addEventListener('wheel', (event) => {
     tracking = true;
     notePose();
     applyPose();
+    return;
+  }
+  if (finePointer()) {
+    const travel = cardTravel();
+    flowTarget = Math.max(-travel, Math.min(travel, flowTarget - dy));
+    gesture.moved = true;
+    kickFlow();
     return;
   }
   const limits = dragLimits();
@@ -1434,6 +1560,7 @@ function syncFromHash() {
   stashPoint = null;
   stashSide = 0;
   movingBundle = false;
+  stopFlow();
   pose = { x: 0, y: 0 };
   cardStack.style.transform = 'none';
   if (location.hash === '#top') {
