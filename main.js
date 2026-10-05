@@ -11,6 +11,8 @@ const tileView = document.getElementById('card-list');
 const tileClose = document.querySelector('.tile-close');
 const tileGrid = document.querySelector('.tile-grid');
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const flowMode = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+if (flowMode) document.documentElement.classList.add('is-flow');
 
 const stackLooks = [
   { x: -7, y: 4, angle: -1.15 },
@@ -116,6 +118,29 @@ function updateCurrentLinks() {
 }
 
 function updateControls(nextView) {
+  if (flowMode) {
+    view = nextView === 'tiles' ? 'card' : nextView;
+    document.body.dataset.view = view;
+    menuToggle.hidden = false;
+    backTop.classList.remove('is-shown');
+    backTop.setAttribute('aria-hidden', 'true');
+    backTop.tabIndex = -1;
+    if (tileToggle) tileToggle.hidden = true;
+    hero.inert = false;
+    hero.removeAttribute('aria-hidden');
+    hero.style.opacity = '1';
+    chapters.forEach((chapter, index) => {
+      chapter.classList.remove('is-stacked', 'is-preview', 'is-leaving');
+      chapter.classList.add('is-active');
+      chapter.inert = false;
+      chapter.removeAttribute('aria-hidden');
+      cardFor(index)?.style.removeProperty('transform');
+      clearCardDrag(index);
+    });
+    cardStack.style.transform = 'none';
+    updateCurrentLinks();
+    return;
+  }
   view = nextView;
   document.body.dataset.view = nextView;
   const onTop = nextView === 'top';
@@ -1145,6 +1170,12 @@ indexLinks.forEach((link) => {
   link.addEventListener('click', (event) => {
     event.preventDefault();
     menu.close();
+    if (flowMode) {
+      const hash = link.hash || '#top';
+      if (location.hash !== hash) location.hash = hash;
+      else scrollFlow(hash);
+      return;
+    }
     if (link.hash === '#top') {
       if (location.hash !== '#top') location.hash = '#top';
       return;
@@ -1294,7 +1325,7 @@ function armWheelDrag(gesture) {
 }
 
 window.addEventListener('wheel', (event) => {
-  if (menu.open || view === 'tiles' || event.ctrlKey) return;
+  if (flowMode || menu.open || view === 'tiles' || event.ctrlKey) return;
   const factor = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? deck.clientHeight : 1;
   const dx = event.deltaX * factor;
   const dy = event.deltaY * factor;
@@ -1443,7 +1474,7 @@ function endDrag(gesture) {
 }
 
 deck.addEventListener('touchstart', (event) => {
-  if (menu.open || view === 'tiles' || event.touches.length !== 1) return;
+  if (flowMode || menu.open || view === 'tiles' || event.touches.length !== 1) return;
   const touch = event.touches[0];
   touchGesture = startDrag(touch.clientX, touch.clientY, Boolean(event.target.closest('a, button, summary')), 'touch');
 }, { passive: true });
@@ -1468,7 +1499,7 @@ deck.addEventListener('touchcancel', () => {
 }, { passive: true });
 
 deck.addEventListener('pointerdown', (event) => {
-  if (event.pointerType === 'touch' || event.button !== 0 || menu.open || view === 'tiles' ||
+  if (flowMode || event.pointerType === 'touch' || event.button !== 0 || menu.open || view === 'tiles' ||
       event.target.closest('a, button, summary, input, textarea, select')) return;
   if (finePointer() && event.target.closest('.card-copy')) return;
   pointerGesture = startDrag(event.clientX, event.clientY, false, 'pointer');
@@ -1520,6 +1551,7 @@ deck.addEventListener('dblclick', (event) => {
 });
 
 window.addEventListener('keydown', (event) => {
+  if (flowMode) return;
   if (menu.open || event.altKey || event.ctrlKey || event.metaKey ||
       event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
   if (view === 'tiles') {
@@ -1548,7 +1580,22 @@ window.addEventListener('keydown', (event) => {
   else if (!event.repeat && back && activeIndex === 0 && location.hash !== '#top') location.hash = '#top';
 });
 
+let flowBoot = true;
+
+function scrollFlow(hash) {
+  const target = !hash || hash === '#top' ? hero : document.querySelector(hash);
+  target?.scrollIntoView({ behavior: flowBoot || reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+  flowBoot = false;
+}
+
 function syncFromHash() {
+  if (flowMode) {
+    const index = chapters.findIndex((chapter) => `#${chapter.id}` === location.hash);
+    activeIndex = index;
+    updateControls(index < 0 ? 'top' : 'card');
+    scrollFlow(location.hash || '#top');
+    return;
+  }
   cancelAllAnimations();
   preview = null;
   if (tileView) {
@@ -1582,6 +1629,24 @@ function syncFromHash() {
 }
 
 window.addEventListener('hashchange', syncFromHash);
+if (flowMode) {
+  const flowTargets = [hero, ...chapters];
+  const flowWatch = new IntersectionObserver((entries) => {
+    const visible = entries
+      .filter((entry) => entry.isIntersecting)
+      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+    if (!visible) return;
+    const id = visible.target.id;
+    const index = chapters.findIndex((chapter) => chapter.id === id);
+    activeIndex = index;
+    view = index < 0 ? 'top' : 'card';
+    document.body.dataset.view = view;
+    updateCurrentLinks();
+    const nextHash = index < 0 ? '#top' : `#${id}`;
+    if (location.hash !== nextHash) history.replaceState(null, '', nextHash);
+  }, { rootMargin: '-15% 0px -60% 0px', threshold: [0.2, 0.45, 0.7] });
+  flowTargets.forEach((target) => flowWatch.observe(target));
+}
 window.addEventListener('blur', () => {
   resetWheel(false);
   if (tracking) releasePose();

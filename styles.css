@@ -438,4 +438,62 @@ html:not(.js) .tile-toggle { display: none !important; }
 .inquiry-status { min-height: 3.2em; margin: 16px 0 0; font-size: 13px; line-height: 1.7; }
 .inquiry-close { margin-top: 8px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: .25em; }
 .inquiry-trap { position: absolute; left: -9999px; top: 0; height: 0; overflow: hidden; }
+
+/* PC: cards follow one another down the page. The card grows with its text. */
+html.is-flow,
+html.is-flow body { height: auto; overflow: auto; }
+html.is-flow main { position: relative; inset: auto; height: auto; min-height: 100dvh; overflow: visible; }
+html.is-flow .hero {
+  position: relative;
+  inset: auto;
+  height: 100dvh;
+  min-height: 100dvh;
+  visibility: visible;
+  overflow: hidden;
+  z-index: auto;
+  scroll-margin-top: 0;
+}
+html.is-flow .hero h1,
+html.is-flow .hero-lead { visibility: visible !important; }
+html.is-flow .card-stack {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 12px 0 0;
+  padding: 0 28px 80px;
+  transform: none !important;
+}
+html.is-flow .chapter {
+  position: relative;
+  inset: auto;
+  display: block;
+  width: min(100%, 960px);
+  height: auto;
+  padding: 0;
+  overflow: visible;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: auto !important;
+  scroll-margin-top: 72px;
+}
+html.is-flow .chapter.is-stacked { overflow: visible; }
+html.is-flow .story-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  transform: none !important;
+}
+html.is-flow .card-copy {
+  flex: none;
+  height: auto;
+  overflow: visible;
+  margin-bottom: 8px;
+}
+html.is-flow .tile-toggle,
+html.is-flow .back-top { display: none; }
 .inquiry-frame { position: absolute; width: 0; height: 0; border: 0; }
