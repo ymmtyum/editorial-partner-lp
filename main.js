@@ -826,7 +826,16 @@ function canReadFurther(direction) {
 }
 
 function scrollCurrentCard(delta) {
-  if (activeIndex >= 0) cardScrollFor(activeIndex).scrollTop += delta;
+  if (activeIndex < 0) return 0;
+  const scroller = cardScrollFor(activeIndex);
+  if (!scroller) return 0;
+  const before = scroller.scrollTop;
+  scroller.scrollTop += delta;
+  return scroller.scrollTop - before;
+}
+
+function finePointer() {
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 }
 
 function alignStack() {
@@ -1151,6 +1160,13 @@ indexLinks.forEach((link) => {
     } else enterStack(index);
   });
 });
+document.querySelector('.index-contact')?.addEventListener('click', (event) => {
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+  event.preventDefault();
+  const opened = window.open('./contact.html', 'editorial-partner-contact', 'popup,width=520,height=760');
+  if (opened) opened.opener = null;
+  menu.close();
+});
 
 function finishWheel(commit = true) {
   clearTimeout(wheelIdleTimer);
@@ -1165,52 +1181,63 @@ function resetWheel(commit = true) {
   finishWheel(commit);
 }
 
+function armWheelDrag(gesture) {
+  if (gesture.armed) return;
+  gesture.armed = true;
+  gesture.mode = 'drag';
+  captureLivePose();
+}
+
 window.addEventListener('wheel', (event) => {
   if (menu.open || view === 'tiles' || event.ctrlKey) return;
   const factor = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? deck.clientHeight : 1;
   const dx = event.deltaX * factor;
   const dy = event.deltaY * factor;
-  if (!dx && !dy) return;
+  if (!dy) {
+    if (dx) event.preventDefault();
+    return;
+  }
   event.preventDefault();
-  const vertical = Math.abs(dy) >= Math.abs(dx);
   const direction = Math.sign(dy);
   if (!wheelGesture) {
-    const reading = vertical && view === 'card' && canReadFurther(direction);
+    const reading = view === 'card' && canReadFurther(direction);
     if (!reading) captureLivePose();
-    wheelGesture = { lastAt: performance.now(), mode: reading ? 'read' : 'drag', moved: false };
+    wheelGesture = {
+      lastAt: performance.now(),
+      mode: reading ? 'read' : 'drag',
+      moved: false,
+      overscroll: 0,
+      armed: !reading,
+    };
     tracking = !reading;
   }
   const gesture = wheelGesture;
   gesture.lastAt = performance.now();
-  gesture.sumX = (gesture.sumX || 0) + dx;
-  gesture.sumY = (gesture.sumY || 0) + dy;
   clearTimeout(wheelIdleTimer);
   wheelIdleTimer = setTimeout(() => finishWheel(true), 180);
   if (gesture.mode === 'read') {
-    scrollCurrentCard(dy);
-    if (direction && !canReadFurther(direction)) {
-      gesture.mode = 'drag';
-      gesture.axis = 'y';
-      gesture.lockedApplied = true;
-      captureLivePose();
-      tracking = true;
-      return;
-    } else return;
+    const consumed = scrollCurrentCard(dy);
+    const leftover = dy - consumed;
+    if (Math.abs(leftover) < 0.5) return;
+    if (gesture.overscroll && Math.sign(gesture.overscroll) !== Math.sign(leftover)) gesture.overscroll = 0;
+    gesture.overscroll += leftover;
+    if (Math.abs(gesture.overscroll) < 80) return;
+    const extra = gesture.overscroll - Math.sign(gesture.overscroll) * 80;
+    gesture.overscroll = 0;
+    armWheelDrag(gesture);
+    if (!extra) return;
+    const limits = dragLimits();
+    pose.x = 0;
+    pose.y = rubber(pose.y - extra, limits.minY, limits.maxY);
+    gesture.moved = true;
+    tracking = true;
+    notePose();
+    applyPose();
+    return;
   }
-  if (!gesture.axis) {
-    if (Math.hypot(gesture.sumX, gesture.sumY) < 8) return;
-    if (Math.abs(gesture.sumX) >= Math.abs(gesture.sumY)) {
-      gesture.axis = 'x';
-      return;
-    }
-    gesture.axis = 'y';
-  }
-  if (gesture.axis !== 'y') return;
   const limits = dragLimits();
-  const stepY = gesture.lockedApplied ? dy : gesture.sumY;
-  gesture.lockedApplied = true;
   pose.x = 0;
-  pose.y = rubber(pose.y - stepY, limits.minY, limits.maxY);
+  pose.y = rubber(pose.y - dy, limits.minY, limits.maxY);
   gesture.moved = true;
   tracking = true;
   notePose();
@@ -1317,6 +1344,7 @@ deck.addEventListener('touchcancel', () => {
 deck.addEventListener('pointerdown', (event) => {
   if (event.pointerType === 'touch' || event.button !== 0 || menu.open || view === 'tiles' ||
       event.target.closest('a, button, summary, input, textarea, select')) return;
+  if (finePointer() && event.target.closest('.card-copy')) return;
   pointerGesture = startDrag(event.clientX, event.clientY, false, 'pointer');
   deck.setPointerCapture(event.pointerId);
 });
@@ -1355,7 +1383,14 @@ deck.addEventListener('click', (event) => {
 deck.addEventListener('click', (event) => {
   if (performance.now() < suppressClickUntil || view !== 'card' || menu.open) return;
   if (event.target.closest('a, button, summary, input, textarea, select')) return;
+  if (finePointer()) return;
   registerKnock();
+});
+deck.addEventListener('dblclick', (event) => {
+  if (!finePointer() || view !== 'card' || menu.open) return;
+  if (event.target.closest('a, button, summary, input, textarea, select, .card-copy')) return;
+  event.preventDefault();
+  alignStack();
 });
 
 window.addEventListener('keydown', (event) => {

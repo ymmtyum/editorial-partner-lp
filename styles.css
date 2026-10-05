@@ -65,12 +65,15 @@ main { touch-action: auto; }
 .menu-dialog[open] .index-nav a:nth-child(6) { animation-delay: 240ms; }
 .menu-dialog[open] .index-nav a:nth-child(7) { animation-delay: 280ms; }
 .menu-dialog[open] .index-nav a:nth-child(8) { animation-delay: 320ms; }
+.menu-dialog[open] .index-nav a:nth-child(9) { animation-delay: 360ms; }
 .menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
 .menu-heading h2 { margin: 0; font: 500 23px var(--font-display); }
 .menu-heading form { margin: 0; }
 .index-nav { display: grid; }
 .index-nav a { text-decoration: none; }
 .index-top { display: flex; justify-content: space-between; padding: 14px 0 24px; font-size: 12px; color: var(--muted); }
+.index-contact { display: flex; padding: 22px 0; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.7; text-decoration: none; }
+.index-contact:hover { background: #e9ece280; }
 .index-link { display: grid; grid-template-columns: 26px 1fr 18px; gap: 14px; align-items: center; padding: 20px 0; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.7; transition: background .25s ease-in-out; }
 .index-link:hover, .index-link[aria-current="location"] { background: #e9ece280; }
 .index-number { font: 11px Arial, sans-serif; color: var(--muted); }
@@ -403,3 +406,23 @@ html:not(.js) .story-card { height: auto; }
 html:not(.js) .card-copy { overflow: visible; }
 html:not(.js) .menu-toggle,
 html:not(.js) .tile-toggle { display: none !important; }
+
+.inquiry { position: relative; inset: auto; height: auto; min-height: 100%; overflow: visible; padding: 48px 28px 64px; }
+.inquiry-sheet { width: min(100%, 440px); margin: 0 auto; }
+.inquiry h1 { margin: 0 0 12px; font: 500 32px/1.4 var(--font-display); letter-spacing: .04em; }
+.inquiry-lead { margin: 0 0 28px; font-size: 14px; line-height: 1.9; }
+.inquiry label { display: block; margin: 0 0 18px; font-size: 13px; }
+.inquiry-purpose { margin: 0 0 22px; padding: 0; border: 0; }
+.inquiry-purpose legend { margin: 0 0 10px; font-size: 13px; }
+.inquiry-purpose label { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; }
+.inquiry input, .inquiry textarea { display: block; width: 100%; margin-top: 8px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: inherit; font: inherit; }
+.inquiry input::placeholder, .inquiry textarea::placeholder { color: var(--muted); }
+.inquiry input:focus-visible, .inquiry textarea:focus-visible { outline: 2px solid #4b6338; outline-offset: 4px; }
+.inquiry-purpose input { width: auto; margin: 0; padding: 0; border: 0; }
+.inquiry textarea { min-height: 160px; padding: 12px; border: 1px solid var(--line); resize: vertical; }
+.inquiry-submit { margin-top: 8px; padding: 10px 22px; border: 1px solid var(--ink); background: transparent; font-size: 14px; }
+.inquiry-submit:hover { background: var(--accent); }
+.inquiry-status { min-height: 3.2em; margin: 16px 0 0; font-size: 13px; line-height: 1.7; }
+.inquiry-close { margin-top: 8px; padding: 0; border: 0; background: transparent; color: var(--muted); font-size: 12px; text-decoration: underline; text-underline-offset: .25em; }
+.inquiry-trap { position: absolute; left: -9999px; top: 0; height: 0; overflow: hidden; }
+.inquiry-frame { position: absolute; width: 0; height: 0; border: 0; }

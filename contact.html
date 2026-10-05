@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="エディトリアル・パートナーへの問い合わせ" />
+    <title>問い合わせ｜エディトリアル・パートナー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css?v=39" />
+  </head>
+  <body>
+    <main class="inquiry">
+      <div class="inquiry-sheet">
+        <h1>問い合わせ</h1>
+        <p class="inquiry-lead">ご用件を選んで、お名前とメールアドレス、伝えたいことを書いてください。必要であれば、30分のミーティングでお話しできます。</p>
+        <form id="inquiry-form" method="post" action="">
+          <fieldset class="inquiry-purpose">
+            <legend>用件</legend>
+            <label><input name="purpose" type="radio" value="お願いしたい" required />お願いしたい</label>
+            <label><input name="purpose" type="radio" value="相談をしたい" required />相談をしたい</label>
+            <label><input name="purpose" type="radio" value="話を聞きたい" required />話を聞きたい</label>
+          </fieldset>
+          <label>名前<input name="name" type="text" autocomplete="name" maxlength="200" placeholder="山田 太郎" required /></label>
+          <label>メールアドレス<input name="email" type="email" autocomplete="email" maxlength="200" placeholder="taro@example.com" required /></label>
+          <label>本文<textarea name="message" maxlength="4000" placeholder="発信の相談をしたいです。30分ほどお話しできると助かります。" required></textarea></label>
+          <div class="inquiry-trap" aria-hidden="true">
+            <label>会社名<input name="company" type="text" tabindex="-1" autocomplete="off" /></label>
+          </div>
+          <input name="token" type="hidden" value="" />
+          <input name="openedAt" type="hidden" value="" />
+          <input name="origin" type="hidden" value="" />
+          <button class="inquiry-submit" type="submit">送る</button>
+          <p class="inquiry-status" role="status" aria-live="polite"></p>
+          <button class="inquiry-close" type="button">閉じる</button>
+        </form>
+      </div>
+    </main>
+    <iframe class="inquiry-frame" name="inquiry-result" title="送信結果"></iframe>
+    <script>
+      if (window.opener) window.opener = null;
+      const inquiryEndpoint = 'https://script.google.com/macros/s/AKfycbyxUaRsVvJkf03waBCYDMUPCx2JJVosyKEu_03Ld7ubfb50Per08sGWqIz_rAXnPnEJEA/exec';
+      const inquiryToken = 'editorial-partner';
+      const form = document.getElementById('inquiry-form');
+      const status = form.querySelector('.inquiry-status');
+      const frame = document.querySelector('.inquiry-frame');
+      const openedAt = Date.now();
+      let waitTimer = 0;
+
+      function inquiryTarget() {
+        if (inquiryEndpoint) return inquiryEndpoint;
+        if (location.hostname === 'ymmtyum.github.io') return '';
+        return '/inquiry-dev';
+      }
+
+      function show(text) {
+        status.textContent = text;
+      }
+
+      function finish(ok) {
+        clearTimeout(waitTimer);
+        form.dataset.busy = '';
+        show(ok
+          ? '受け取りました。内容を確認して、記入されたメールアドレスへ返信します。'
+          : '送れませんでした。時間をおいて、もう一度送ってください。');
+        if (!ok) return;
+        form.dataset.done = '1';
+        for (const field of form.elements) {
+          if (field.type === 'hidden' || field.type === 'button') continue;
+          field.disabled = true;
+        }
+      }
+
+      form.querySelector('[name="openedAt"]').value = String(openedAt);
+      form.querySelector('[name="token"]').value = inquiryToken;
+      form.querySelector('[name="origin"]').value = location.origin;
+      document.querySelector('.inquiry-close').addEventListener('click', () => window.close());
+
+      function fromInquiryFrame(source) {
+        let current = source;
+        for (let depth = 0; depth < 5 && current; depth += 1) {
+          if (current === frame.contentWindow) return true;
+          if (current === window) return false;
+          try { current = current.parent; } catch (error) { return false; }
+        }
+        return false;
+      }
+
+      function inquiryMessage(event) {
+        const data = event.data;
+        if (!data || data.type !== 'inquiry' || typeof data.ok !== 'boolean') return false;
+        if (fromInquiryFrame(event.source)) return true;
+        const origin = String(event.origin || '');
+        return origin === 'null' ||
+          origin === 'https://script.google.com' ||
+          /^https:\/\/(?:[a-z0-9-]+\.)*googleusercontent\.com$/.test(origin);
+      }
+
+      window.addEventListener('message', (event) => {
+        if (form.dataset.busy !== '1' || !inquiryMessage(event)) return;
+        finish(event.data.ok);
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (form.dataset.busy === '1' || form.dataset.done === '1') return;
+        if (form.company.value) return;
+        const purposes = ['お願いしたい', '相談をしたい', '話を聞きたい'];
+        const purpose = form.purpose.value;
+        const name = form.name.value.trim();
+        const email = form.email.value.trim();
+        const message = form.message.value.trim();
+        if (!purposes.includes(purpose)) {
+          show('用件を選んでください。');
+          return;
+        }
+        if (!name) {
+          show('名前を書いてください。');
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          show('メールアドレスを確認してください。');
+          return;
+        }
+        if (!message) {
+          show('本文を書いてください。');
+          return;
+        }
+        if (message.length > 4000) {
+          show('本文は4000字までです。');
+          return;
+        }
+        if (Date.now() - openedAt < 3000) {
+          show('少し待ってから送ってください。');
+          return;
+        }
+        const target = inquiryTarget();
+        if (!target) {
+          show('送れませんでした。時間をおいて、もう一度送ってください。');
+          return;
+        }
+        form.dataset.busy = '1';
+        show('送っています。');
+        clearTimeout(waitTimer);
+        waitTimer = setTimeout(() => finish(false), 15000);
+        if (target.startsWith('http') && new URL(target).origin !== location.origin) {
+          postViaFrame(target);
+          return;
+        }
+        const body = new URLSearchParams(new FormData(form));
+        fetch(target, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+          .then((response) => response.text())
+          .then((html) => finish(/ok:\s*true/.test(html)))
+          .catch(() => finish(false));
+      });
+
+      function postViaFrame(target) {
+        const transport = document.createElement('form');
+        transport.method = 'post';
+        transport.action = target;
+        transport.target = 'inquiry-result';
+        transport.hidden = true;
+        for (const field of form.elements) {
+          if (!field.name || field.type === 'submit' || field.type === 'button') continue;
+          if ((field.type === 'radio' || field.type === 'checkbox') && !field.checked) continue;
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = field.name;
+          input.value = field.value;
+          transport.append(input);
+        }
+        document.body.append(transport);
+        transport.submit();
+      }
+    </script>
+  </body>
+</html>
