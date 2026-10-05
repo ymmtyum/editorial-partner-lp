@@ -440,6 +440,13 @@ html:not(.js) .tile-toggle { display: none !important; }
 .inquiry input::placeholder, .inquiry textarea::placeholder { color: var(--muted); }
 .inquiry input:focus-visible, .inquiry textarea:focus-visible { outline: 2px solid #4b6338; outline-offset: 4px; }
 .inquiry-purpose input { width: auto; margin: 0; padding: 0; border: 0; }
+.inquiry label.inquiry-toggle { position: relative; display: flex; align-items: center; gap: 12px; min-height: 44px; margin: 4px 0 22px; cursor: pointer; }
+.inquiry label.inquiry-toggle input { position: absolute; width: 1px; height: 1px; margin: 0; padding: 0; overflow: hidden; clip: rect(0 0 0 0); border: 0; }
+.inquiry-switch { position: relative; display: block; flex: 0 0 44px; width: 44px; min-width: 44px; height: 26px; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
+.inquiry-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); transition: transform 160ms ease; }
+.inquiry-toggle input:checked + .inquiry-switch { background: var(--accent); border-color: #b7c96a; }
+.inquiry-toggle input:checked + .inquiry-switch::after { transform: translateX(18px); }
+.inquiry-toggle input:focus-visible + .inquiry-switch { outline: 2px solid #4b6338; outline-offset: 4px; }
 .inquiry textarea { min-height: 160px; padding: 12px; border: 1px solid var(--line); resize: vertical; }
 .inquiry-submit { margin-top: 8px; padding: 10px 22px; border: 1px solid var(--ink); background: transparent; font-size: 14px; }
 .inquiry-submit:hover { background: var(--accent); }
@@ -503,7 +510,7 @@ html.is-flow .chapter {
   position: relative;
   inset: auto;
   display: block;
-  width: min(100%, 560px);
+  width: min(100%, 720px);
   height: auto;
   padding: 0;
   overflow: visible;
