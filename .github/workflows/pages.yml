@@ -32,7 +32,7 @@ jobs:
       - name: Prepare public files
         run: |
           mkdir -p _site/images
-          cp index.html styles.css main.js favicon.svg profile.svg og.png _site/
+          cp index.html contact.html styles.css main.js favicon.svg profile.svg og.png _site/
           cp images/* _site/images/
 
       - name: Upload website
