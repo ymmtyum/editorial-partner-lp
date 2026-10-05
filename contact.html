@@ -5,6 +5,16 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="エディトリアル・パートナーへの問い合わせ" />
+    <meta property="og:title" content="問い合わせ｜エディトリアル・パートナー" />
+    <meta property="og:description" content="ご用件、お名前、メールアドレスを書いてください。会社名と備考は任意です。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:url" content="https://ymmtyum.github.io/editorial-partner-lp/contact.html" />
+    <meta property="og:image" content="https://ymmtyum.github.io/editorial-partner-lp/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://ymmtyum.github.io/editorial-partner-lp/og.png" />
     <title>問い合わせ｜エディトリアル・パートナー</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,35 +22,41 @@
       href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=39" />
+    <link rel="stylesheet" href="./styles.css?v=51" />
   </head>
   <body>
+    <header class="site-header">
+      <p class="hero-brand">エディトリアル・パートナー</p>
+    </header>
     <main class="inquiry">
       <div class="inquiry-sheet">
         <h1>問い合わせ</h1>
-        <p class="inquiry-lead">ご用件を選んで、お名前とメールアドレス、伝えたいことを書いてください。必要であれば、30分のミーティングでお話しできます。</p>
-        <form id="inquiry-form" method="post" action="">
+        <p class="inquiry-lead">ご用件を選んで、お名前とメールアドレスを書いてください。会社名と備考は、分かる範囲で大丈夫です。必要であれば、30分のミーティングでお話しできます。</p>
+        <p class="inquiry-required"><span aria-hidden="true">*</span> は必須項目です</p>
+        <form id="inquiry-form" method="post" action="" novalidate>
           <fieldset class="inquiry-purpose">
-            <legend>用件</legend>
-            <label><input name="purpose" type="radio" value="お願いしたい" required />お願いしたい</label>
-            <label><input name="purpose" type="radio" value="相談をしたい" required />相談をしたい</label>
-            <label><input name="purpose" type="radio" value="話を聞きたい" required />話を聞きたい</label>
+            <legend>ご用件<span class="req" aria-hidden="true">*</span></legend>
+            <label><input name="purpose" type="radio" value="制作を依頼したい" required />制作を依頼したい</label>
+            <label><input name="purpose" type="radio" value="自分に合うか相談したい" required />自分に合うか相談したい</label>
+            <label><input name="purpose" type="radio" value="サービスについて知りたい" required />サービスについて知りたい</label>
+            <label><input name="purpose" type="radio" value="その他" required />その他</label>
           </fieldset>
-          <label>名前<input name="name" type="text" autocomplete="name" maxlength="200" placeholder="山田 太郎" required /></label>
-          <label>メールアドレス<input name="email" type="email" autocomplete="email" maxlength="200" placeholder="taro@example.com" required /></label>
-          <label>本文<textarea name="message" maxlength="4000" placeholder="発信の相談をしたいです。30分ほどお話しできると助かります。" required></textarea></label>
+          <label>会社名<input name="company" type="text" autocomplete="organization" maxlength="200" placeholder="株式会社あおば" /></label>
+          <label>お名前<span class="req" aria-hidden="true">*</span><input name="name" type="text" autocomplete="name" maxlength="200" placeholder="山田 太郎" required /></label>
+          <label>メールアドレス<span class="req" aria-hidden="true">*</span><input name="email" type="email" autocomplete="email" maxlength="200" placeholder="taro@example.com" required /></label>
+          <label>備考<textarea name="message" maxlength="4000" placeholder="30分ほどお話しできると助かります。"></textarea></label>
           <div class="inquiry-trap" aria-hidden="true">
-            <label>会社名<input name="company" type="text" tabindex="-1" autocomplete="off" /></label>
+            <label>ウェブサイト<input name="website" type="text" tabindex="-1" autocomplete="off" /></label>
           </div>
           <input name="token" type="hidden" value="" />
           <input name="openedAt" type="hidden" value="" />
           <input name="origin" type="hidden" value="" />
           <button class="inquiry-submit" type="submit">送る</button>
           <p class="inquiry-status" role="status" aria-live="polite"></p>
-          <button class="inquiry-close" type="button">閉じる</button>
         </form>
       </div>
     </main>
+    <button class="inquiry-close" type="button" aria-label="閉じる">×</button>
     <iframe class="inquiry-frame" name="inquiry-result" title="送信結果"></iframe>
     <script>
       const inquiryEndpoint = 'https://script.google.com/macros/s/AKfycbyxUaRsVvJkf03waBCYDMUPCx2JJVosyKEu_03Ld7ubfb50Per08sGWqIz_rAXnPnEJEA/exec';
@@ -57,8 +73,9 @@
         return '/inquiry-dev';
       }
 
-      function show(text) {
+      function show(text, field) {
         status.textContent = text;
+        field?.focus();
       }
 
       function finish(ok) {
@@ -108,38 +125,46 @@
       form.addEventListener('submit', (event) => {
         event.preventDefault();
         if (form.dataset.busy === '1' || form.dataset.done === '1') return;
-        if (form.company.value) return;
-        const purposes = ['お願いしたい', '相談をしたい', '話を聞きたい'];
+        if (form.website.value) return;
+        const purposes = ['制作を依頼したい', '自分に合うか相談したい', 'サービスについて知りたい', 'その他'];
         const purpose = form.purpose.value;
         const name = form.name.value.trim();
         const email = form.email.value.trim();
         const message = form.message.value.trim();
         if (!purposes.includes(purpose)) {
-          show('用件を選んでください。');
+          show('ご用件を選んでください。', form.querySelector('[name="purpose"]'));
+          return;
+        }
+        if (form.company.value.trim().length > 200) {
+          show('会社名は200字までです。', form.company);
           return;
         }
         if (!name) {
-          show('名前を書いてください。');
+          show('お名前を書いてください。', form.name);
           return;
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          show('メールアドレスを確認してください。');
-          return;
-        }
-        if (!message) {
-          show('本文を書いてください。');
+          show('メールアドレスを確認してください。', form.email);
           return;
         }
         if (message.length > 4000) {
-          show('本文は4000字までです。');
+          show('備考は4000字までです。', form.message);
           return;
         }
-        if (Date.now() - openedAt < 3000) {
-          show('少し待ってから送ってください。');
+        const remain = 3000 - (Date.now() - openedAt);
+        if (remain > 0) {
+          form.dataset.busy = '1';
+          show('送っています。');
+          setTimeout(sendInquiry, remain);
           return;
         }
+        sendInquiry();
+      });
+
+      function sendInquiry() {
         const target = inquiryTarget();
         if (!target) {
+          form.dataset.busy = '';
           show('送れませんでした。時間をおいて、もう一度送ってください。');
           return;
         }
@@ -156,7 +181,7 @@
           .then((response) => response.text())
           .then((html) => finish(/ok:\s*true/.test(html)))
           .catch(() => finish(false));
-      });
+      }
 
       function postViaFrame(target) {
         const transport = document.createElement('form');

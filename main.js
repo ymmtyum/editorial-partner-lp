@@ -1582,10 +1582,39 @@ window.addEventListener('keydown', (event) => {
 
 let flowBoot = true;
 
+function updateFlowFrame() {
+  const headline = document.getElementById('headline');
+  const lead = document.querySelector('.hero-lead');
+  const cards = [...document.querySelectorAll('.story-card')];
+  if (headline && lead && cards.length) {
+    const cardTop = Math.min(...cards.map((card) => card.getBoundingClientRect().top));
+    for (const element of [headline, lead]) {
+      const box = element.getBoundingClientRect();
+      const covered = Math.min(1, Math.max(0, (box.bottom - cardTop) / Math.max(1, box.height)));
+      element.style.opacity = String(1 - covered);
+    }
+  }
+  const line = window.innerHeight * 0.28;
+  let index = -1;
+  chapters.forEach((chapter, chapterIndex) => {
+    if (chapter.getBoundingClientRect().top <= line) index = chapterIndex;
+  });
+  activeIndex = index;
+  view = index < 0 ? 'top' : 'card';
+  document.body.dataset.view = view;
+  updateCurrentLinks();
+  const nextHash = index < 0 ? '#top' : `#${chapters[index].id}`;
+  if (location.hash !== nextHash) history.replaceState(null, '', nextHash);
+}
+
 function scrollFlow(hash) {
-  const target = !hash || hash === '#top' ? hero : document.querySelector(hash);
-  target?.scrollIntoView({ behavior: flowBoot || reduceMotion.matches ? 'auto' : 'smooth', block: 'start' });
+  const behavior = flowBoot || reduceMotion.matches ? 'auto' : 'smooth';
   flowBoot = false;
+  if (!hash || hash === '#top') {
+    window.scrollTo({ top: 0, behavior });
+    return;
+  }
+  document.querySelector(hash)?.scrollIntoView({ behavior, block: 'start' });
 }
 
 function syncFromHash() {
@@ -1594,6 +1623,7 @@ function syncFromHash() {
     activeIndex = index;
     updateControls(index < 0 ? 'top' : 'card');
     scrollFlow(location.hash || '#top');
+    requestAnimationFrame(updateFlowFrame);
     return;
   }
   cancelAllAnimations();
@@ -1630,22 +1660,9 @@ function syncFromHash() {
 
 window.addEventListener('hashchange', syncFromHash);
 if (flowMode) {
-  const flowTargets = [hero, ...chapters];
-  const flowWatch = new IntersectionObserver((entries) => {
-    const visible = entries
-      .filter((entry) => entry.isIntersecting)
-      .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-    if (!visible) return;
-    const id = visible.target.id;
-    const index = chapters.findIndex((chapter) => chapter.id === id);
-    activeIndex = index;
-    view = index < 0 ? 'top' : 'card';
-    document.body.dataset.view = view;
-    updateCurrentLinks();
-    const nextHash = index < 0 ? '#top' : `#${id}`;
-    if (location.hash !== nextHash) history.replaceState(null, '', nextHash);
-  }, { rootMargin: '-15% 0px -60% 0px', threshold: [0.2, 0.45, 0.7] });
-  flowTargets.forEach((target) => flowWatch.observe(target));
+  document.addEventListener('scroll', updateFlowFrame, { passive: true, capture: true });
+  document.scrollingElement?.addEventListener('scroll', updateFlowFrame, { passive: true });
+  window.addEventListener('resize', updateFlowFrame);
 }
 window.addEventListener('blur', () => {
   resetWheel(false);

@@ -15,12 +15,17 @@
       content="あなたの視点、あなたの言葉で。エディトリアル・パートナーは、経営者や個人事業主に伴走する発信のパートナーです。"
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://ymmtyum.github.io/editorial-partner/" />
-    <meta property="og:image" content="https://ymmtyum.github.io/editorial-partner/og.png" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:url" content="https://ymmtyum.github.io/editorial-partner-lp/" />
+    <meta property="og:image" content="https://ymmtyum.github.io/editorial-partner-lp/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="あなたの視点、あなたの言葉で。" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="canonical" href="https://ymmtyum.github.io/editorial-partner/" />
+    <meta name="twitter:title" content="エディトリアル・パートナー by 山本勇磨" />
+    <meta name="twitter:description" content="あなたの視点、あなたの言葉で。エディトリアル・パートナーは、経営者や個人事業主に伴走する発信のパートナーです。" />
+    <meta name="twitter:image" content="https://ymmtyum.github.io/editorial-partner-lp/og.png" />
+    <link rel="canonical" href="https://ymmtyum.github.io/editorial-partner-lp/" />
     <title>エディトリアル・パートナー by 山本勇磨</title>
     <script>document.documentElement.classList.add("js")</script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,14 +34,16 @@
       href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="./styles.css?v=43" />
+    <link rel="stylesheet" href="./styles.css?v=51" />
   </head>
   <body>
-    <p class="hero-brand">エディトリアル・パートナー</p>
-    <div class="corner-actions">
-      <a class="corner-inquiry inquiry-open" href="./contact.html" target="_blank" rel="noopener noreferrer">問い合わせ</a>
-      <button class="menu-toggle" type="button" aria-label="メニューを開く" aria-haspopup="dialog" aria-expanded="false" aria-controls="site-menu"><span></span><span></span></button>
-    </div>
+    <header class="site-header">
+      <p class="hero-brand">エディトリアル・パートナー</p>
+      <div class="corner-actions">
+        <a class="corner-inquiry inquiry-open" href="./contact.html" target="_blank" rel="noopener noreferrer">問い合わせ</a>
+        <button class="menu-toggle" type="button" aria-label="メニューを開く" aria-haspopup="dialog" aria-expanded="false" aria-controls="site-menu"><span></span><span></span></button>
+      </div>
+    </header>
     <dialog id="site-menu" class="menu-dialog" aria-labelledby="menu-title">
       <div class="menu-heading"><h2 id="menu-title">目次</h2><form method="dialog"><button class="close-button" aria-label="メニューを閉じる" autofocus>×</button></form></div>
       <nav class="index-nav" aria-label="各カードへ移動">
@@ -48,7 +55,7 @@
           <a href="#chapter-process" class="index-link"><span class="index-number">05</span><span>制作の流れ</span><span aria-hidden="true">↗</span></a>
           <a href="#chapter-faq" class="index-link"><span class="index-number">06</span><span>よくある質問</span><span aria-hidden="true">↗</span></a>
           <a href="#chapter-profile" class="index-link"><span class="index-number">07</span><span>プロフィール</span><span aria-hidden="true">↗</span></a>
-          <a href="./contact.html" class="index-contact inquiry-open" target="_blank" rel="noopener noreferrer">問い合わせ</a>
+          <a href="#chapter-contact" class="index-link"><span class="index-number">08</span><span>問い合わせはこちらから</span><span aria-hidden="true">↗</span></a>
       </nav>
     </dialog>
     <main>
@@ -64,6 +71,7 @@
         <a href="#chapter-process">05 制作の流れ</a>
         <a href="#chapter-faq">06 よくある質問</a>
         <a href="#chapter-profile">07 プロフィール</a>
+        <a href="#chapter-contact">08 問い合わせはこちらから</a>
         <a href="./contact.html" target="_blank" rel="noopener noreferrer">問い合わせ</a>
       </nav>
       <div class="card-stack" aria-live="polite">
@@ -216,10 +224,21 @@
           </div>
         </article>
       </section>
+      <section id="chapter-contact" class="chapter" aria-labelledby="chapter-contact-title" tabindex="-1">
+        <article class="story-card">
+          <div class="card-meta"><span class="card-number">08</span><span>CONTACT</span></div>
+          <div class="card-copy">
+            <h2 id="chapter-contact-title">問い合わせはこちらから</h2>
+            <div class="card-content">
+              <a class="card-inquiry inquiry-open" href="./contact.html" target="_blank" rel="noopener noreferrer">問い合わせ</a>
+            </div>
+          </div>
+        </article>
+      </section>
       </div>
     </main>
     <button class="back-top" type="button" aria-label="トップへ戻る" aria-hidden="true" tabindex="-1">×</button>
     <span class="build-tag" aria-hidden="true">v39</span>
-    <script src="./main.js?v=43" defer></script>
+    <script src="./main.js?v=46" defer></script>
   </body>
 </html>
